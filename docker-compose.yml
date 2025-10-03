@@ -59,7 +59,7 @@ services:
     image: ${registry}compreface-fe:${FE_VERSION}
     container_name: "compreface-ui"
     ports:
-      - "8000:80"
+      - "8100:80"
     depends_on:
       - compreface-api
       - compreface-admin
@@ -70,16 +70,34 @@ services:
 
   compreface-core:
     restart: always
-    image: ${registry}compreface-core:${CORE_VERSION}
+    # image: ${registry}compreface-core:${CORE_VERSION}
+    image: compreface-embedding-calculator:gpu
     container_name: "compreface-core"
     environment:
-      - ML_PORT=3000
-      - IMG_LENGTH_LIMIT=${max_detect_size}
-      - UWSGI_PROCESSES=${uwsgi_processes:-2}
-      - UWSGI_THREADS=${uwsgi_threads:-1}
+      ML_PORT: 3000
+      IMG_LENGTH_LIMIT: ${max_detect_size}
+      UWSGI_PROCESSES: ${uwsgi_processes:-2}
+      UWSGI_THREADS: ${uwsgi_threads:-1}
+      # GPU / TensorFlow configuration (can be overridden in .env)
+      GPU_IDX: ${GPU_IDX:-0}
+      CUDA: ${CUDA:-11.8}
+      TF_VERSION: ${TF_VERSION:-2.11.0}
+      TENSORFLOW_PACKAGE: ${TENSORFLOW_PACKAGE:-tensorflow}
+      CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES:-${GPU_IDX:-0}}
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-${GPU_IDX:-0}}
+      NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
+    volumes:
+      - ./models/models:/app/ml/.models
     healthcheck:
       test: curl --fail http://localhost:3000/healthcheck || exit 1
       interval: 10s
       retries: 0
       start_period: 0s
       timeout: 1s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

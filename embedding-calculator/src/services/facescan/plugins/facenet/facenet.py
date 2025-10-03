@@ -22,8 +22,9 @@ import tensorflow.compat.v1 as tf1
 from tensorflow.python.platform import gfile
 from cached_property import cached_property
 
-import sys
-sys.path.append('srcext')
+# import sys
+# sys.path.append('srcext')
+# from mtcnn import MTCNN
 from mtcnn import MTCNN
 
 from src.constants import ENV
@@ -74,11 +75,14 @@ class FaceDetector(mixins.FaceDetectorMixin, base.BasePlugin):
 
     @cached_property
     def _face_detection_net(self):
-        return MTCNN(
-            min_face_size=self.FACE_MIN_SIZE,
-            scale_factor=self.SCALE_FACTOR,
-            steps_threshold=[self.det_threshold_a, self.det_threshold_b, self.det_threshold_c]
-        )
+        device = "GPU:0" if tf1.test.is_gpu_available() else "CPU:0"
+        # return MTCNN(
+        #     min_face_size=self.FACE_MIN_SIZE,
+        #     scale_factor=self.SCALE_FACTOR,
+        #     steps_threshold=[self.det_threshold_a, self.det_threshold_b, self.det_threshold_c],
+        #     device="GPU:0"
+        # )
+        return MTCNN(device=device)
 
     def crop_face(self, img: Array3D, box: BoundingBoxDTO) -> Array3D:
         return squish_img(crop_img(img, box), (self.IMAGE_SIZE, self.IMAGE_SIZE))
@@ -108,12 +112,13 @@ class FaceDetector(mixins.FaceDetectorMixin, base.BasePlugin):
         else:
             fdn = self._face_detection_net
             detect_face_result = fdn.detect_faces(img)
+            logger.debug(f"FaceDetector.find_faces: detect_face_result = {detect_face_result}")
 
         img_size = np.asarray(img.shape)[0:2]
         bounding_boxes = []
 
         for face in detect_face_result:
-            x, y, w, h = face['box']
+            x, y, w, h = face["box"]
             box = BoundingBoxDTO(
                 x_min=int(np.maximum(x - (self.left_margin * w), 0)),
                 y_min=int(np.maximum(y - (self.top_margin * h), 0)),

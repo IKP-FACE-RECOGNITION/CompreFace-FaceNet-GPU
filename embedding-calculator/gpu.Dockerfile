@@ -1,23 +1,44 @@
 ARG BASE_IMAGE
-FROM ${BASE_IMAGE:-nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04}
+# FROM ${BASE_IMAGE:-nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04}
+FROM ${BASE_IMAGE:-nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04}
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV CUDA=11.8
+# ENV CUDA=12.3
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#         build-essential \
+#         software-properties-common \
+# 		curl \
+# 		pkg-config \
+# 		unzip \
+#     	python3-dev \
+#     	python3-distutils \
+#     && rm -rf /var/lib/apt/lists/*
+
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+		build-essential \
         software-properties-common \
 		curl \
 		pkg-config \
 		unzip \
-    	python3-dev \
-    	python3-distutils \
+		python3 \
+        python3-dev \
+        python3-distutils \
+        python3-pip \
     && rm -rf /var/lib/apt/lists/*
+
+
+# RUN python3 -m pip install --no-cache-dir --upgrade pip setuptool
+## get-pip bootstrap not needed because python3-pip is installed via apt; just upgrade
+## (previously duplicated bootstrap commands removed to reduce layers and failure risk)
+
 
 # See http://bugs.python.org/issue19846
 ENV LANG C.UTF-8
 
-RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python3 get-pip.py
 RUN python3 -m pip --no-cache-dir install --upgrade pip setuptools
 
 # Some TF tools expect a "python" binary

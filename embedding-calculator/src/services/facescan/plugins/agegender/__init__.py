@@ -11,5 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
+from src.services.facescan.plugins.dependencies import get_tensorflow
 
-requirements = ('tensorflow~=2.2.0', 'tf-slim~=1.1.0')
+# Use shared helper to choose correct tensorflow package name (cpu or gpu)
+requirements = get_tensorflow('2.12.0') + ('tf-slim~=1.1.0',)
